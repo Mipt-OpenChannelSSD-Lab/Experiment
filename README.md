@@ -19,11 +19,14 @@ sudo apt-get install libnfs-dev libiscsi-dev
 ```
 
 2) Install KVM https://losst.ru/ustanovka-kvm-ubuntu-16-04#Установка_KVM_в_Ubuntu_2004
+
 Do everything described in section "УСТАНОВКА KVM В UBUNTU 20.04". If you have another linux dictributive, search for a manual yourself)
 
 3) Install QEMU itself 
-If you encounter error while configuring QEMU, add --disable-werror to bypass it (I've added) or try to fix, if you want
+
+If you encounter error while configuring QEMU, add --disable-werror to bypass it (I've added) or try to fix, if you want.
 To avoid problems, I've installed everything with root priviledges
+
 ```
 git clone --recurse-submodules https://github.com/OpenChannelSSD/qemu-nvme.git
 cd qemu-nvme
@@ -54,8 +57,8 @@ x86_64-softmmu/qemu-system-x86_64 -m 1024 -enable-kvm \
 
 If you face troubles with audio driver, dissable it by passing env variable `QEMU_AUDIO_DRV=none` to launch command
 
-8) Try this command https://openchannelssd.readthedocs.io/en/latest/gettingstarted/
-or this http://lightnvm.io/pblk-tools/usage.html
+8) Try this commands https://openchannelssd.readthedocs.io/en/latest/gettingstarted/
+or this http://lightnvm.io/pblk-tools/usage.html to ensure that everything works
 
 I've encountered troubles with this command `sudo nvme lnvm create -d nvme0n1 --lun-begin=0 --lun-end=3 -n mydevice -t pblk`
 

@@ -9,8 +9,6 @@ import enum
 import random
 
 
-n_metrics = 4
-n_cols = n_metrics + 1
 test_percent = 0.3
 
 
@@ -35,7 +33,7 @@ class KNN:
             dists[i, :] = np.sqrt(((self.X_train - X[i]) ** 2).sum(axis=1))
         return dists
 
-    def predict_labels(self, dists, k=1):
+    def predict_labels(self, dists, k):
         num_test = dists.shape[0]
         y_pred = np.zeros(num_test)
         for i in range(num_test):
@@ -78,7 +76,7 @@ def showData(X, y):
     pl.show()
 
 
-def main():
+def main1():
     data = generateData(40, 3)
 
     train, test = split(data, test_percent)
@@ -109,9 +107,9 @@ def main():
     return
 
 
-def main1():
+def main():
     # TODO: read csv into X and y4
-    df = pd.read_csv('dataset.csv')
+    df = pd.read_csv('data_log.csv')
 
     data_read = df.to_numpy()
 
@@ -123,20 +121,37 @@ def main1():
 
     X_train = np.array([row[:-1] for row in train])
     y_train = np.array([row[-1] for row in train])
+    y_train = y_train.astype(int)
 
     X_test = np.array([row[:-1] for row in test])
     y_test = np.array([row[-1] for row in test])
+    y_test = y_test.astype(int)
 
     knn.fit(X_train, y_train)
 
     # TODO: obtain results
+    fails = 0
+    success = 0
     for i in range(len(y_test)):
-        res = knn.predict(X_test[i], 1)
+        res = knn.predict(X_test[i], 3)
 
         if (res[0] == y_test[i]):
-            print("[SUCCESS] element ", i, " passed!")
+            if res[0] == 1:
+                print("[SUCCESS] caught virus!")
+                success += 1
+            else:
+                print("[SUCCESS]")
         else:
-            print("[FAIL] element ", i, " failed!")
+            if res[0] == 0:
+                print("[FAIL] uncaught virus!")
+                fails += 1
+            else:
+                print("[FAIL] blocked SSD for nothing!")
+                fails += 1
+
+    print("[SUMMARY] fails:  ", fails, ", success: ", success)
+    print("[SUMMARY] fails%: ", fails / (fails + success),
+          "success%: ", success / (fails + success))
 
     return
 

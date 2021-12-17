@@ -1,15 +1,17 @@
 import numpy as np
-import math
+from numpy.core.arrayprint import printoptions
+import pandas as pd
+import random
 import matplotlib.pyplot as plt
 from matplotlib.colors import ListedColormap
 import pylab as pl
-import pandas as pd
-import csv
-import enum
-import random
 
 
-test_percent = 0.3
+test_percent = 0.2
+
+slices_per_window = 5
+K = 3
+TRESHOLD_NEIGHBOURS = 3
 
 
 class KNN:
@@ -29,13 +31,16 @@ class KNN:
         num_test = X.shape[0]
         num_train = self.X_train.shape[0]
         dists = np.zeros((num_test, num_train))
+
         for i in range(num_test):
             dists[i, :] = np.sqrt(((self.X_train - X[i]) ** 2).sum(axis=1))
+
         return dists
 
     def predict_labels(self, dists, k):
         num_test = dists.shape[0]
         y_pred = np.zeros(num_test)
+
         for i in range(num_test):
             closest_y = self.y_train[np.argsort(dists[i])[:k]]
             y_pred[i] = np.bincount(closest_y).argmax()
@@ -54,64 +59,15 @@ def split(data, testPercent):
     return trainData, testData
 
 
-# random
-def generateData(numberOfClassEl, numberOfClasses):
-    data = []
-    for classNum in range(numberOfClasses):
-        # Choose random center of 2-dimensional gaussian
-        centerX, centerY = random.random()*5.0, random.random()*5.0
-        # Choose numberOfClassEl random nodes with RMS=0.5
-        for rowNum in range(numberOfClassEl):
-            data.append(
-                [[random.gauss(centerX, 0.5), random.gauss(centerY, 0.5)], classNum])
-    return data
-
-
-def showData(X, y):
-    classColormap = ListedColormap(['#FF0000', '#00FF00', '#0000FF'])
-    pl.scatter([X[i][0] for i in range(len(X))],
-               [X[i][1] for i in range(len(X))],
-               c=[y],
-               cmap=classColormap)
-    pl.show()
-
-
-def main1():
-    data = generateData(40, 3)
-
-    train, test = split(data, test_percent)
-
-    X_train = np.array([row[0] for row in train])
-    y_train = np.array([row[1] for row in train])
-
-    X_test = np.array([row[0] for row in test])
-    y_test = np.array([row[1] for row in test])
-
-    print(X_train)
-    print(y_train)
-
-    showData(X_train, y_train)
-
-    knn = KNN()
-
-    knn.fit(X_train, y_train)
-
-    # TODO: obtain results
-    res = knn.predict(X_test, 3)
-    for i in range(len(y_test)):
-        if (res[i] == y_test[i]):
-            print("[SUCCESS] element ", i, " passed!")
-        else:
-            print("[FAIL] element ", i, " failed!")
-
-    return
-
-
 def main():
     # TODO: read csv into X and y4
-    df = pd.read_csv('data_log.csv')
+    df = pd.read_csv('log3.csv')
 
     data_read = df.to_numpy()
+
+   # preprocess
+    for row in data_read:
+        row[2] /= slices_per_window
 
     # TODO: split train dataset and test
     train, test = split(data_read, test_percent)
@@ -119,30 +75,85 @@ def main():
     # TODO: train KNN
     knn = KNN()
 
-    X_train = np.array([row[:-1] for row in train])
+    X_train = np.array([row[: -1] for row in train])
     y_train = np.array([row[-1] for row in train])
     y_train = y_train.astype(int)
 
-    X_test = np.array([row[:-1] for row in test])
+    X_test = np.array([row[: -1] for row in test])
     y_test = np.array([row[-1] for row in test])
     y_test = y_test.astype(int)
+
+##############
+
+    classColormap = ListedColormap(['#000000', '#FF0000'])
+    pl.scatter([data_read[i][0] for i in range(len(data_read))],
+               [data_read[i][1] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('0vs1.png')
+
+    pl.scatter([data_read[i][0] for i in range(len(data_read))],
+               [data_read[i][2] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('0vs2.png')
+
+    pl.scatter([data_read[i][0] for i in range(len(data_read))],
+               [data_read[i][3] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('0vs3.png')
+
+    pl.scatter([data_read[i][1] for i in range(len(data_read))],
+               [data_read[i][2] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('1vs2.png')
+
+    pl.scatter([data_read[i][1] for i in range(len(data_read))],
+               [data_read[i][3] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('1vs3.png')
+
+    pl.scatter([data_read[i][2] for i in range(len(data_read))],
+               [data_read[i][3] for i in range(len(data_read))],
+               c=[data_read[i][-1] for i in range(len(data_read))],
+               cmap=classColormap)
+    pl.savefig('2vs3.png')
+
+##########
 
     knn.fit(X_train, y_train)
 
     # TODO: obtain results
+
+    res = knn.predict(X_test, K)
+
+    final_result = np.zeros(len(y_test))
+
+    for i in range(slices_per_window, len(y_test)):
+        sum = 0
+        for j in range(slices_per_window):
+            sum += res[i - j]
+
+        if sum < TRESHOLD_NEIGHBOURS:
+            final_result[i] = 0
+        else:
+            final_result[i] = 1
+
     fails = 0
     success = 0
-    for i in range(len(y_test)):
-        res = knn.predict(X_test[i], 3)
-
-        if (res[0] == y_test[i]):
-            if res[0] == 1:
+    for i in range(slices_per_window, len(y_test)):
+        if (res[i] == y_test[i]):
+            if res[i] == 1:
                 print("[SUCCESS] caught virus!")
                 success += 1
             else:
                 print("[SUCCESS]")
+                success += 1
         else:
-            if res[0] == 0:
+            if res[i] == 0:
                 print("[FAIL] uncaught virus!")
                 fails += 1
             else:
